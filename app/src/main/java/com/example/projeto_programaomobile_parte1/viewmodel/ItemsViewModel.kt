@@ -42,7 +42,12 @@ class ItemsViewModel(private val context: Context, private val listaId: String) 
         repo.observarItens(listaId)
             .onEach { result ->
                 when (result) {
-                    is Result.Loading -> _loading.value = true
+                    is Result.Loading -> {
+                        // Só mostra loading na primeira carga
+                        if (_todosItens.value.isNullOrEmpty()) {
+                            _loading.value = true
+                        }
+                    }
                     is Result.Success -> {
                         _loading.value = false
                         _todosItens.value = result.data
@@ -76,15 +81,13 @@ class ItemsViewModel(private val context: Context, private val listaId: String) 
     }
 
     fun adicionarItem(nome: String, quantidade: Double, unidade: Unidade, categoria: Categoria) {
-        _loading.value = true
         viewModelScope.launch {
             when (val result = repo.adicionarItem(listaId, nome, quantidade, unidade, categoria)) {
                 is Result.Success -> {
-                    _loading.value = false
                     _mensagem.value = "Item adicionado"
+                    // O item será atualizado automaticamente pelo listener
                 }
                 is Result.Error -> {
-                    _loading.value = false
                     _mensagem.value = result.message ?: "Erro ao adicionar item"
                 }
                 is Result.Loading -> {}
@@ -93,15 +96,13 @@ class ItemsViewModel(private val context: Context, private val listaId: String) 
     }
 
     fun editarItem(item: Item) {
-        _loading.value = true
         viewModelScope.launch {
             when (val result = repo.editarItem(item)) {
                 is Result.Success -> {
-                    _loading.value = false
                     _mensagem.value = "Item atualizado"
+                    // O item será atualizado automaticamente pelo listener
                 }
                 is Result.Error -> {
-                    _loading.value = false
                     _mensagem.value = result.message ?: "Erro ao atualizar item"
                 }
                 is Result.Loading -> {}
@@ -110,15 +111,13 @@ class ItemsViewModel(private val context: Context, private val listaId: String) 
     }
 
     fun removerItem(itemId: String) {
-        _loading.value = true
         viewModelScope.launch {
             when (val result = repo.removerItem(listaId, itemId)) {
                 is Result.Success -> {
-                    _loading.value = false
                     _mensagem.value = "Item removido"
+                    // O item será atualizado automaticamente pelo listener
                 }
                 is Result.Error -> {
-                    _loading.value = false
                     _mensagem.value = result.message ?: "Erro ao remover item"
                 }
                 is Result.Loading -> {}

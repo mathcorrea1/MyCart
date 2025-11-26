@@ -38,7 +38,6 @@ class ListRepository(
 
         val listener = listasCollection
             .whereEqualTo("userId", userId)
-            .orderBy("titulo", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     trySend(Result.Error(error, error.toFirestoreErrorMessage()))

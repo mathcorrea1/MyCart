@@ -40,7 +40,12 @@ class ListsViewModel(private val context: Context, private val userId: String) :
         repo.observarListas(userId)
             .onEach { result ->
                 when (result) {
-                    is Result.Loading -> _loading.value = true
+                    is Result.Loading -> {
+                        // Só mostra loading na primeira carga
+                        if (_todasListas.value.isNullOrEmpty()) {
+                            _loading.value = true
+                        }
+                    }
                     is Result.Success -> {
                         _loading.value = false
                         _todasListas.value = result.data
@@ -74,15 +79,13 @@ class ListsViewModel(private val context: Context, private val userId: String) :
     }
 
     fun adicionarLista(titulo: String, uri: Uri?) {
-        _loading.value = true
         viewModelScope.launch {
             when (val result = repo.adicionarLista(userId, titulo, uri)) {
                 is Result.Success -> {
-                    _loading.value = false
                     _mensagem.value = "Lista criada com sucesso"
+                    // A lista será atualizada automaticamente pelo listener
                 }
                 is Result.Error -> {
-                    _loading.value = false
                     _mensagem.value = result.message ?: "Erro ao criar lista"
                 }
                 is Result.Loading -> {}
@@ -91,15 +94,13 @@ class ListsViewModel(private val context: Context, private val userId: String) :
     }
 
     fun editarLista(id: String, novoTitulo: String, novaImagem: Uri?) {
-        _loading.value = true
         viewModelScope.launch {
             when (val result = repo.editarLista(userId, id, novoTitulo, novaImagem)) {
                 is Result.Success -> {
-                    _loading.value = false
                     _mensagem.value = "Lista atualizada"
+                    // A lista será atualizada automaticamente pelo listener
                 }
                 is Result.Error -> {
-                    _loading.value = false
                     _mensagem.value = result.message ?: "Erro ao atualizar lista"
                 }
                 is Result.Loading -> {}
@@ -108,15 +109,13 @@ class ListsViewModel(private val context: Context, private val userId: String) :
     }
 
     fun excluirLista(id: String) {
-        _loading.value = true
         viewModelScope.launch {
             when (val result = repo.excluirLista(userId, id)) {
                 is Result.Success -> {
-                    _loading.value = false
                     _mensagem.value = "Lista removida"
+                    // A lista será atualizada automaticamente pelo listener
                 }
                 is Result.Error -> {
-                    _loading.value = false
                     _mensagem.value = result.message ?: "Erro ao remover lista"
                 }
                 is Result.Loading -> {}
