@@ -1,12 +1,13 @@
 package com.example.projeto_programaomobile_parte1.ui.register
 
 import android.os.Bundle
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.ViewModelProvider
 import com.example.projeto_programaomobile_parte1.databinding.ActivityRegisterBinding
-import com.google.android.material.snackbar.Snackbar
 import com.example.projeto_programaomobile_parte1.viewmodel.RegisterViewModel
+import com.google.android.material.snackbar.Snackbar
 
 class RegisterActivity : AppCompatActivity() {
     private lateinit var binding: ActivityRegisterBinding
@@ -30,10 +31,23 @@ class RegisterActivity : AppCompatActivity() {
             vm.cadastrar(nome, email, senha, confirmar)
         }
 
-        vm.erro.observe(this) { msg -> msg?.let { Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show() } }
-        vm.mensagem.observe(this) { msg -> msg?.let {
-            Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show()
-            finish()
-        } }
+        // Observar loading state
+        vm.loading.observe(this) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+            binding.btnCriarConta.isEnabled = !isLoading
+        }
+
+        vm.erro.observe(this) { msg ->
+            msg?.let {
+                Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show()
+            }
+        }
+
+        vm.mensagem.observe(this) { msg ->
+            msg?.let {
+                Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show()
+                finish()
+            }
+        }
     }
 }

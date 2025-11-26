@@ -82,7 +82,7 @@ class ItemsActivity : AppCompatActivity() {
         val listaId = intent.getStringExtra("listaId") ?: error("listaId obrigatório")
         title = intent.getStringExtra("listaTitulo") ?: getString(R.string.titulo_itens)
 
-        vm = ViewModelProvider(this, ItemsVMFactory(listaId))[ItemsViewModel::class.java]
+        vm = ViewModelProvider(this, ItemsVMFactory(this, listaId))[ItemsViewModel::class.java]
 
         val adapter = ItemAdapter(
             onEditar = { item -> abrirTelaEditarItem(item) },
@@ -158,11 +158,14 @@ class ItemsActivity : AppCompatActivity() {
     }
 }
 
-class ItemsVMFactory(private val listaId: String) : ViewModelProvider.Factory {
+class ItemsVMFactory(
+    private val context: android.content.Context,
+    private val listaId: String
+) : ViewModelProvider.Factory {
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(ItemsViewModel::class.java)) {
             @Suppress("UNCHECKED_CAST")
-            return ItemsViewModel(listaId) as T
+            return ItemsViewModel(context, listaId) as T
         }
         throw IllegalArgumentException("Unknown VM class")
     }

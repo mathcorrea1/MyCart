@@ -4,11 +4,10 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import android.widget.SearchView
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.FileProvider
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.projeto_programaomobile_parte1.R
@@ -28,7 +27,7 @@ class ListsActivity : AppCompatActivity() {
     private var listaSelecionadaParaImagem: ListaCompra? = null
     private var imagemCameraUri: Uri? = null
 
-    private val abrirDocumento = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+    private val abrirDocumento = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         val lista = listaSelecionadaParaImagem
         if (uri != null && lista != null) {
             vm.editarLista(lista.id, lista.titulo, uri)
@@ -36,7 +35,7 @@ class ListsActivity : AppCompatActivity() {
         listaSelecionadaParaImagem = null
     }
 
-    private val tirarFoto = registerForActivityResult(ActivityResultContracts.TakePicture()) { sucesso: Boolean ->
+    private val tirarFoto = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.TakePicture()) { sucesso: Boolean ->
         val lista = listaSelecionadaParaImagem
         if (sucesso && imagemCameraUri != null && lista != null) {
             vm.editarLista(lista.id, lista.titulo, imagemCameraUri)
@@ -45,7 +44,7 @@ class ListsActivity : AppCompatActivity() {
         imagemCameraUri = null
     }
 
-    private val novaListaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private val novaListaLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             val data = result.data
             val titulo = data?.getStringExtra(AddListActivity.EXTRA_TITULO).orEmpty()
@@ -57,7 +56,7 @@ class ListsActivity : AppCompatActivity() {
         }
     }
 
-    private val editarListaLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+    private val editarListaLauncher = registerForActivityResult(androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == RESULT_OK) {
             val data = result.data
             val id = data?.getStringExtra(EditListActivity.EXTRA_ID).orEmpty()
@@ -80,10 +79,22 @@ class ListsActivity : AppCompatActivity() {
         binding = ActivityListsBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Verificar se há usuário logado
+        val auth = ServiceLocator.authRepository()
+        val userId = auth.getCurrentUserId()
+        if (userId == null || !auth.isLoggedIn()) {
+            irParaLogin()
+            return
+        }
+
         // Configurar a ActionBar
         setSupportActionBar(binding.toolbar)
 
-        vm = ViewModelProvider(this)[ListsViewModel::class.java]
+        // Criar ViewModel com Factory (precisa de Context e userId)
+        vm = ViewModelProvider(
+            this,
+            ListsViewModelFactory(applicationContext, userId)
+        )[ListsViewModel::class.java]
 
         val adapter = ListaAdapter(
             aoClicar = { lista, _ -> abrirItensDaLista(lista) },
@@ -97,11 +108,19 @@ class ListsActivity : AppCompatActivity() {
             novaListaLauncher.launch(i)
         }
 
+        // Observar estados
+        vm.loading.observe(this) { isLoading ->
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
+        }
+
         vm.listasFiltradas.observe(this) { listas ->
             adapter.submitList(listas)
             binding.txtVazio.visibility = if (listas.isEmpty()) View.VISIBLE else View.GONE
         }
-        vm.mensagem.observe(this) { msg -> msg?.let { Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show() } }
+
+        vm.mensagem.observe(this) { msg ->
+            msg?.let { Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show() }
+        }
     }
 
     override fun onCreateOptionsMenu(menu: android.view.Menu?): Boolean {
@@ -133,14 +152,18 @@ class ListsActivity : AppCompatActivity() {
     }
 
     private fun realizarLogout() {
-        // Descarta dados
-        ServiceLocator.listRepository().limpar()
+        // Limpar dados e fazer logout
+        ServiceLocator.clear()
         ServiceLocator.authRepository().efetuarLogout()
-        // Volta para a tela de login e limpa
+        irParaLogin()
+    }
+
+    private fun irParaLogin() {
         val i = Intent(this, LoginActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         startActivity(i)
+        finish()
     }
 
     private fun mostrarMenuLista(lista: ListaCompra, anchor: View) {
@@ -161,7 +184,7 @@ class ListsActivity : AppCompatActivity() {
         val i = Intent(this, EditListActivity::class.java).apply {
             putExtra(EditListActivity.EXTRA_ID, lista.id)
             putExtra(EditListActivity.EXTRA_TITULO, lista.titulo)
-            putExtra(EditListActivity.EXTRA_IMAGEM, lista.imagemUri?.toString())
+            putExtra(EditListActivity.EXTRA_IMAGEM, lista.imagemPath)
         }
         editarListaLauncher.launch(i)
     }
@@ -207,5 +230,19 @@ class ListsActivity : AppCompatActivity() {
 
     private fun abrirGaleria() {
         abrirDocumento.launch(arrayOf("image/*"))
+    }
+}
+
+// Factory para criar ViewModel com parâmetros
+class ListsViewModelFactory(
+    private val context: android.content.Context,
+    private val userId: String
+) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ListsViewModel::class.java)) {
+            @Suppress("UNCHECKED_CAST")
+            return ListsViewModel(context, userId) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
