@@ -3,8 +3,26 @@
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
+    <!-- Sabonete -->
     <path
         android:fillColor="#E91E63"
-        android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10 10,-4.48 10,-10S17.52,2 12,2zM12,20c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8 8,3.59 8,8 -3.59,8 -8,8zM7,13h10v-2H7v2z"/>
+        android:pathData="M12,4c-4,0 -7,2 -7,5v6c0,3 3,5 7,5s7,-2 7,-5V9C19,6 16,4 12,4z"/>
+    <!-- Brilho superior -->
+    <path
+        android:fillColor="#F48FB1"
+        android:fillAlpha="0.6"
+        android:pathData="M9,7c1,-1 2,-1.5 3,-1.5s2,0.5 3,1.5c0,1 -0.5,2 -1.5,2.5S12,10 11,9.5S8.5,8 9,7z"/>
+    <!-- Bolhas de espuma -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.8"
+        android:pathData="M8,6m-1,0a1,1 0,1 1,2 0a1,1 0,1 1,-2 0"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.6"
+        android:pathData="M16,7m-0.8,0a0.8,0.8 0,1 1,1.6 0a0.8,0.8 0,1 1,-1.6 0"/>
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.7"
+        android:pathData="M14,5m-0.6,0a0.6,0.6 0,1 1,1.2 0a0.6,0.6 0,1 1,-1.2 0"/>
 </vector>
-
